@@ -22,7 +22,6 @@ public class AuthController {
         return service.register(request);
 
     }
-
     @PostMapping("/login")
     public String login(@RequestBody AuthRequest request){
         return service.login(request);
