@@ -15,4 +15,7 @@ public class UserEntity {
 
     private String username;
     private String password;
+
+    // OTP field added
+    private String otp;
 }
