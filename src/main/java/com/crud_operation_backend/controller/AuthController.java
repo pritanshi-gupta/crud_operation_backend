@@ -17,7 +17,7 @@ public class AuthController {
     @Autowired
     private AuthService service;
 
-    // Register API
+    // REGISTER API
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(@RequestBody AuthRequest request) {
 
@@ -30,21 +30,21 @@ public class AuthController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    // Login API
+    // LOGIN API (✔ UPDATED - now returns JWT)
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody AuthRequest request) {
 
-        String message = service.login(request);
+        String token = service.login(request);  // 🔥 now returns JWT
 
         Map<String, Object> response = new HashMap<>();
         response.put("status", true);
-        response.put("message", message);
+        response.put("token", token);   // ✔ frontend ke liye important
 
         return ResponseEntity.ok(response);
     }
 
-    // Send OTP API
-    @PostMapping("/send-otp")
+    // SEND OTP API
+    @PostMapping("/resend-otp")
     public ResponseEntity<Map<String, Object>> sendOtp(@RequestBody AuthRequest request) {
 
         String message = service.sendOtp(request);
@@ -56,7 +56,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // Verify OTP API
+    // VERIFY OTP API (✔ already correct)
     @PostMapping("/verify-otp")
     public ResponseEntity<Map<String, Object>> verifyOtp(@RequestBody AuthRequest request) {
 
