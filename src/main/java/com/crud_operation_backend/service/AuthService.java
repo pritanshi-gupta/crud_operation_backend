@@ -4,9 +4,14 @@ import com.crud_operation_backend.dto.AuthRequest;
 import com.crud_operation_backend.entity.UserEntity;
 import com.crud_operation_backend.repository.UserRepository;
 import com.crud_operation_backend.security.JwtUtil;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class AuthService {
@@ -20,7 +25,11 @@ public class AuthService {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // Register API
+    // 🔥 NEW (IMPORTANT)
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+
+    // REGISTER API
     public String register(AuthRequest request) {
 
         UserEntity user = new UserEntity();
@@ -32,20 +41,38 @@ public class AuthService {
         return "User Registered Successfully";
     }
 
-    // Login API
-    public String login(AuthRequest request) {
+    // LOGIN API (UPDATED - access + refresh token)
+    public Map<String, String> login(AuthRequest request) {
+
+        SecureRandom secureRandom = new SecureRandom();
+        int number = secureRandom.nextInt(1000000);
+        String otp = String.format("%06d", number);
 
         UserEntity user = repo.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (encoder.matches(request.getPassword(), user.getPassword())) {
-            return "Login Successful";
+
+            user.setOtp(otp);
+            repo.save(user);
+
+            // 🔥 ACCESS TOKEN
+            String accessToken = jwtUtil.generateToken(user.getUsername());
+
+            // 🔥 REFRESH TOKEN
+            String refreshToken = refreshTokenService.createToken(user);
+
+            Map<String, String> tokens = new HashMap<>();
+            tokens.put("accessToken", accessToken);
+            tokens.put("refreshToken", refreshToken);
+
+            return tokens;
         }
 
         throw new RuntimeException("Invalid credentials");
     }
 
-    // Send OTP API
+    // SEND OTP API
     public String sendOtp(AuthRequest request) {
 
         UserEntity user = repo.findByUsername(request.getUsername())
@@ -56,18 +83,18 @@ public class AuthService {
         user.setOtp(otp);
         repo.save(user);
 
-        return "OTP Sent Successfully : " + otp;
+        return "OTP Sent Successfully";
     }
 
-    // Verify OTP API
+    // VERIFY OTP API
     public String verifyOtp(AuthRequest request) {
 
         UserEntity user = repo.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (user.getOtp().equals(request.getOtp())) {
+        if (user.getOtp() != null && user.getOtp().equals(request.getOtp())) {
 
-            user.setOtp(null); // clear OTP after verify
+            user.setOtp(null);
             repo.save(user);
 
             return jwtUtil.generateToken(user.getUsername());
