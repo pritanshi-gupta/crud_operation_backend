@@ -4,7 +4,7 @@ import com.crud_operation_backend.dto.AuthRequest;
 import com.crud_operation_backend.entity.RefreshToken;
 import com.crud_operation_backend.service.AuthService;
 import com.crud_operation_backend.service.RefreshTokenService;
-import com.crud_operation_backend.security.JwtUtil;   // ✅ FIXED IMPORT
+import com.crud_operation_backend.security.JwtUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,7 +25,7 @@ public class AuthController {
     private RefreshTokenService refreshService;
 
     @Autowired
-    private JwtUtil jwtUtil;   // ✅ FIXED (JwtService → JwtUtil)
+    private JwtUtil jwtUtil;
 
     // REGISTER API
     @PostMapping("/register")
@@ -91,6 +91,36 @@ public class AuthController {
         Map<String, Object> response = new HashMap<>();
         response.put("status", true);
         response.put("accessToken", newAccessToken);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // FORGOT PASSWORD API
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, Object>> forgotPassword(@RequestParam String username) {
+
+        String message = service.forgotPassword(username);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", true);
+        response.put("message", message);
+
+        return ResponseEntity.ok(response);
+    }
+
+    //  RESET PASSWORD API
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody Map<String, String> data) {
+
+        String message = service.resetPassword(
+                data.get("username"),
+                data.get("otp"),
+                data.get("newPassword")
+        );
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", true);
+        response.put("message", message);
 
         return ResponseEntity.ok(response);
     }

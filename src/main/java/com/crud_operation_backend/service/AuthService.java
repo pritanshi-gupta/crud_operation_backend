@@ -25,7 +25,6 @@ public class AuthService {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // 🔥 NEW (IMPORTANT)
     @Autowired
     private RefreshTokenService refreshTokenService;
 
@@ -41,7 +40,7 @@ public class AuthService {
         return "User Registered Successfully";
     }
 
-    // LOGIN API (UPDATED - access + refresh token)
+    // LOGIN API
     public Map<String, String> login(AuthRequest request) {
 
         SecureRandom secureRandom = new SecureRandom();
@@ -56,10 +55,7 @@ public class AuthService {
             user.setOtp(otp);
             repo.save(user);
 
-            // 🔥 ACCESS TOKEN
             String accessToken = jwtUtil.generateToken(user.getUsername());
-
-            // 🔥 REFRESH TOKEN
             String refreshToken = refreshTokenService.createToken(user);
 
             Map<String, String> tokens = new HashMap<>();
@@ -101,5 +97,39 @@ public class AuthService {
         }
 
         throw new RuntimeException("Invalid OTP");
+    }
+
+    // 🔥 FORGOT PASSWORD
+    public String forgotPassword(String username) {
+
+        UserEntity user = repo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String otp = String.valueOf((int)(Math.random() * 900000) + 100000);
+
+        user.setResetOtp(otp);
+        user.setOtpExpiry(java.time.LocalDateTime.now().plusMinutes(5));
+
+        repo.save(user);
+
+        return "OTP sent: " + otp;
+    }
+
+    // 🔥 RESET PASSWORD
+    public String resetPassword(String username, String otp, String newPassword) {
+
+        UserEntity user = repo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getResetOtp() == null || !user.getResetOtp().equals(otp)) {
+            throw new RuntimeException("Invalid OTP");
+        }
+
+        user.setPassword(encoder.encode(newPassword));
+        user.setResetOtp(null);
+
+        repo.save(user);
+
+        return "Password updated successfully";
     }
 }
